@@ -11,6 +11,8 @@
   "license": "ISC",
   "dependencies": {
     "dotenv": "^8.2.0",
+    "lodash": "^4.17.20",
+    "lowdb": "^1.0.0",
     "node-binance-api": "^0.12.4"
   }
 }
