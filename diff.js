@@ -1,38 +1,60 @@
-const { add } = require("lodash");
 var _ = require("lodash");
+var { orderLabel } = require("./orderSemantics");
 
-exports.diffFuturesOpenOrders = function (previous, current) {
-  // [] => qqch
-  // qqch -> []
-  // [a]=>[b]
-  // [a]=>[a]
-  if (_.isEmpty(previous) && _.isEmpty(current)) return [false, "Still no order."];
-  if (_.isEmpty(previous) && !_.isEmpty(current)) return [true, "From no order to new order(s): " + JSON.stringify(current)];
-  if (!_.isEmpty(previous) && _.isEmpty(current)) return [true, "All orders were removed - orders were: " + JSON.stringify(previous)];
+const computeFuturesOpenOrdersDeltaMessage = function (previous, current) {
+  return computeFuturesOpenOrdersDeltaEvents(previous, current).map(
+    (event) => `${_.capitalize(event.type)} ${orderLabel(event.order)}`
+  );
+};
 
-  // both array are not empty
-  previous = previous.map((o) => ({ ...o, updateTime: 0 }));
-  current = current.map((o) => ({ ...o, updateTime: 0 }));
-  const added = difference(current, previous);
-  const removed = difference(previous, current);
-
-  if (_.isEmpty(removed) && _.isEmpty(added)) return [false, "No change on current order(s): " + JSON.stringify(current)];
-  return [true, "Orders changed. Removed: " + JSON.stringify(removed) + ",\n Added: " + JSON.stringify(added)];
+const computeFuturesOpenOrdersDeltaEvents = function (previous, current) {
+  const { added, removed } = diffFuturesOpenOrders(previous, current);
+  const addEvents = added.map((order) => ({ type: "add", order }));
+  const removeEvents = removed.map((order) => ({ type: "remove", order }));
+  return [...removeEvents, ...addEvents];
 };
 
 /**
- * https://gist.github.com/Yimiprod/7ee176597fef230d1451
- * @param  {Object} object Object compared
- * @param  {Object} base   Object to compare with
- * @return {Object}        Return a new object who represent the diff
+ * @param {Array<Order>} previous
+ * @param {Array<Order>} current
+ * @returns Array<{removed:Array<Order>, added:Array<Order>}>
  */
-function difference(object, base) {
-  function changes(object, base) {
-    return _.transform(object, function (result, value, key) {
-      if (!_.isEqual(value, base[key])) {
-        result[key] = _.isObject(value) && _.isObject(base[key]) ? changes(value, base[key]) : value;
-      }
+const diffFuturesOpenOrders = function (previous, current) {
+  if (_.isEmpty(previous) && _.isEmpty(current)) return { removed: [], added: [] };
+  if (_.isEmpty(previous) && !_.isEmpty(current)) return { removed: [], added: current };
+  if (!_.isEmpty(previous) && _.isEmpty(current)) return { removed: previous, added: [] };
+
+  const buildOrderKey = (order) => order.clientOrderId || order.orderId;
+  return diffArraysByKey(previous, current, buildOrderKey);
+};
+
+/**
+ *
+ * @param {Array} previous
+ * @param {Array} current
+ * @param {Function} buildUniqueKey
+ * @returns
+ */
+function diffArraysByKey(previous, current, buildUniqueKey) {
+  const buildMap = (source, hashFunc) => new Map(source.map((order) => [hashFunc(order), order]));
+  const prev = buildMap(previous, buildUniqueKey);
+  const curr = buildMap(current, buildUniqueKey);
+
+  const diff = (arrayA, arrayB) => {
+    const store = [];
+    arrayA.forEach((value, k) => {
+      if (!arrayB.has(k)) store.push(value);
     });
-  }
-  return changes(object, base);
+    return store;
+  };
+
+  const removed = diff(prev, curr);
+  const added = diff(curr, prev);
+  return { removed, added };
 }
+
+module.exports = {
+  diffFuturesOpenOrders,
+  computeFuturesOpenOrdersDeltaEvents,
+  computeFuturesOpenOrdersDeltaMessage,
+};
