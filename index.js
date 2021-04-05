@@ -1,7 +1,8 @@
 const path = require("path");
 var _ = require("lodash");
 const axios = require("axios");
-require("dotenv").config({ path: path.resolve(__dirname, "../.env") });
+const DATA_DIR = "data";
+require("dotenv").config({ path: path.resolve(__dirname, DATA_DIR + "/.env") });
 const { computeFuturesOpenOrdersDeltaMessage } = require("./diff");
 
 const Binance = require("node-binance-api");
@@ -12,7 +13,7 @@ const binance = new Binance().options({
 
 const low = require("lowdb");
 const FileSync = require("lowdb/adapters/FileSync");
-const adapter = new FileSync("../db-binfutorderswatch.json");
+const adapter = new FileSync(DATA_DIR + "/db-binfutorderswatch.json");
 const db = low(adapter);
 
 db.defaults({ futuresOpenOrders: [] }).write();
