@@ -23,7 +23,7 @@ async function loadDB(key) {
       console.log("dynamodb payload: " + payload);
       return JSON.parse(payload || "[]");
     } else {
-      console.error("Could not find key" + key);
+      console.error("Could not find key " + key);
     }
   } catch (error) {
     console.log(error);

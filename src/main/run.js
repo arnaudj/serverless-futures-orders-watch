@@ -21,12 +21,12 @@ async function run(dbProvider, env) {
     console.log("Saving update...");
     await dbProvider.saveDB("futuresOpenOrders", foa);
     console.log("Sending messages...");
-    const promises = _.chunk(messages, 3).map(async (batch) => {
+    const promises = _.chunk(messages, 3).map((batch) =>
       axios.post("https://api.telegram.org/bot" + env.TELEGRAM_BOTTOKEN + "/sendMessage", {
         chat_id: env.TELEGRAM_CHATID,
         text: batch.join("\n"),
-      });
-    });
+      })
+    );
     await Promise.all(promises);
     console.log("Sending messages: done!");
   }
