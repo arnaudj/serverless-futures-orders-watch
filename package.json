@@ -1,5 +1,5 @@
 {
-  "name": "binance-futures-orders-watch",
+  "name": "serverless-futures-orders-watch",
   "version": "1.0.0",
   "description": "",
   "scripts": {

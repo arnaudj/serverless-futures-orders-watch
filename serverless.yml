@@ -1,6 +1,6 @@
 org: arnaudx
-app: binance-futures-orders-watch
-service: binance-futures-orders-watch
+app: serverless-futures-orders-watch
+service: serverless-futures-orders-watch
 variablesResolutionMode: 20210326
 
 frameworkVersion: "2"
@@ -10,7 +10,7 @@ package:
     - "!.dynamodb/**"
 
 custom:
-  tableName: "binance-futures-orders"
+  tableName: "serverless-futures-orders-watch"
   dynamodb: # dynamodb offline configuration - https://github.com/99x/serverless-dynamodb-local#readme
     stages:
       - dev
