@@ -1,3 +1,5 @@
+.serverless
+.dynamodb
 
 # database
 data/**.json

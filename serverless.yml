@@ -1,0 +1,78 @@
+org: arnaudx
+app: binance-futures-orders-watch
+service: binance-futures-orders-watch
+variablesResolutionMode: 20210326
+
+frameworkVersion: "2"
+
+package:
+  patterns:
+    - "!.dynamodb/**"
+
+custom:
+  tableName: "binance-futures-orders"
+  dynamodb: # dynamodb offline configuration - https://github.com/99x/serverless-dynamodb-local#readme
+    stages:
+      - dev
+    start:
+      port: 8000
+      inMemory: true
+      heapInitial: 200m
+      heapMax: 1g
+      migrate: true
+      seed: true
+      convertEmptyValues: true
+    # noStart: true # Uncomment only if you already have a DynamoDB running locally
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  lambdaHashingVersion: "20201221"
+  memorySize: 256
+  timeout: 15
+  stage: dev
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - dynamodb:Query
+            - dynamodb:Scan
+            - dynamodb:GetItem
+            - dynamodb:PutItem
+            - dynamodb:UpdateItem
+            - dynamodb:DeleteItem
+          Resource:
+            - Fn::GetAtt: [FuturesOrdersTable, Arn]
+  environment:
+    FUTURESORDERS_TABLE: ${self:custom.tableName}
+    APIKEY: ${ssm:/APIKEY}
+    APISECRET: ${ssm:/APISECRET}
+    TELEGRAM_BOTTOKEN: ${ssm:/TELEGRAM_BOTTOKEN}
+    TELEGRAM_CHATID: ${ssm:/TELEGRAM_CHATID}
+
+functions:
+  crawl:
+    handler: src/serverless/handler.runner
+    events:
+      - schedule: rate(5 minutes)
+
+resources:
+  Resources:
+    FuturesOrdersTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: ${self:custom.tableName}
+
+plugins:
+  - serverless-dynamodb-local
+  - serverless-offline
